@@ -5,6 +5,7 @@ import queue
 import sys
 import threading
 import time
+from datetime import datetime
 
 import cv2
 
@@ -144,6 +145,9 @@ class SessionWorker(threading.Thread):
                     if monitor is None:
                         monitor = EyeMonitor(calibrator.profile, self.trigger, self.cooldown)
                     detection = monitor.update(ears, now, self.muted.is_set())
+                    if detection.closed_event:
+                        print(f"[{datetime.now().astimezone():%Y-%m-%d %H:%M:%S}] "
+                              "Mata tertutup terdeteksi.", flush=True)
                     if detection.event:
                         warning_count += 1
                     if detection.sound and not self.stopped.is_set():
