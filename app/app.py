@@ -1,6 +1,7 @@
 """Antarmuka Tkinter. Seluruh pembaruan widget terjadi di thread utama."""
 
 import queue
+import math
 import time
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -18,6 +19,72 @@ TEXT = "#edf3fa"
 MUTED = "#9aaec5"
 ACCENT = "#94e2bb"
 ORANGE = "#ffc28e"
+
+
+class RoundedButton(tk.Canvas):
+    """Tombol kanvas sederhana dengan sudut membulat dan keadaan hover."""
+
+    def __init__(self, parent, text, command, accent=False):
+        super().__init__(parent, height=42, bg=parent.cget("bg"),
+                         highlightthickness=0, bd=0, cursor="hand2")
+        self.text = text
+        self.command = command
+        self.accent = accent
+        self.state = "normal"
+        self.hover = False
+        self.bind("<Configure>", lambda _event: self._draw())
+        self.bind("<Enter>", self._enter)
+        self.bind("<Leave>", self._leave)
+        self.bind("<Button-1>", self._click)
+        self._draw()
+
+    def configure(self, cnf=None, **kwargs):
+        if "state" in kwargs:
+            self.state = kwargs.pop("state")
+            self.configure(cursor="arrow" if self.state == "disabled" else "hand2")
+            self._draw()
+        if "text" in kwargs:
+            self.text = kwargs.pop("text")
+            self._draw()
+        return super().configure(cnf, **kwargs)
+
+    config = configure
+
+    def _enter(self, _event):
+        self.hover = True
+        self._draw()
+
+    def _leave(self, _event):
+        self.hover = False
+        self._draw()
+
+    def _click(self, _event):
+        if self.state != "disabled":
+            self.command()
+
+    def _draw(self):
+        if not self.winfo_exists():
+            return
+        self.delete("all")
+        width, height = max(self.winfo_width(), 2), max(self.winfo_height(), 2)
+        if self.state == "disabled":
+            fill, foreground = "#344c46", "#7d918a"
+        elif self.accent:
+            fill, foreground = ("#b5f0d1" if self.hover else ACCENT), "#11261c"
+        else:
+            fill, foreground = ("#38506b" if self.hover else "#293950"), TEXT
+        radius = 12
+        points = []
+        for cx, cy, start in ((width-radius, radius, -90),
+                              (width-radius, height-radius, 0),
+                              (radius, height-radius, 90), (radius, radius, 180)):
+            for step in range(7):
+                angle = (start + step * 90 / 6) * 3.14159265 / 180
+                points.extend((cx + radius * math.cos(angle),
+                               cy + radius * math.sin(angle)))
+        self.create_polygon(points, smooth=True, splinesteps=12, fill=fill, outline=fill)
+        self.create_text(width / 2, height / 2, text=self.text,
+                         font=("Segoe UI", 10, "bold"), fill=foreground)
 
 
 class SIFocusApp:
@@ -129,9 +196,10 @@ class SIFocusApp:
         self.label(right, "Satu pengguna · wajah menghadap kamera", 9, MUTED).pack(anchor="w", pady=(3, 14))
         buttons = tk.Frame(right, bg=CARD)
         buttons.pack(fill="x")
-        self.start_button = ttk.Button(buttons, text="▶  Mulai", style="Accent.TButton", command=self.start)
+        self.start_button = RoundedButton(buttons, text="▶  Mulai", command=self.start, accent=True)
         self.start_button.pack(side="left", fill="x", expand=True, padx=(0, 8))
-        self.stop_button = ttk.Button(buttons, text="■  Berhenti", command=self.stop, state="disabled")
+        self.stop_button = RoundedButton(buttons, text="■  Berhenti", command=self.stop)
+        self.stop_button.configure(state="disabled")
         self.stop_button.pack(side="left", fill="x", expand=True)
 
         self.label(right, "01  KALIBRASI INDIVIDUAL", 10, ACCENT, True).pack(anchor="w", pady=(22, 8))
@@ -151,7 +219,7 @@ class SIFocusApp:
         self._setting(right, "Durasi pemicu (detik)", self.trigger_var, 0.5, 10, 0.5)
         self._setting(right, "Cooldown bunyi (detik)", self.cooldown_var, 2, 60, 1)
         self.label(right, "Parameter prototipe, bukan standar medis.", 9, MUTED).pack(anchor="w", pady=(1, 7))
-        ttk.Button(right, text="Terapkan pengaturan", command=self.apply_settings).pack(fill="x")
+        RoundedButton(right, text="Terapkan pengaturan", command=self.apply_settings).pack(fill="x", pady=(2, 0))
         ttk.Checkbutton(right, text="Mute bunyi pengingat", variable=self.mute_var,
                         command=self.set_mute).pack(anchor="w", pady=(7, 0))
         ttk.Checkbutton(right, text="Tampilkan panel teknis", variable=self.technical_var,

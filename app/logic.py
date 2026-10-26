@@ -129,6 +129,7 @@ class Detection:
     event: bool = False
     sound: bool = False
     smoothed: tuple | None = None
+    closed_event: bool = False
 
 
 class EyeMonitor:
@@ -180,9 +181,11 @@ class EyeMonitor:
             self.is_closed = False
             self.closed_since = None
             self.episode_warned = False
-        elif both_closed and not self.is_closed:
+        closed_event = False
+        if both_closed and not self.is_closed:
             self.is_closed = True
             self.closed_since = now
+            closed_event = True
         # Di antara kedua ambang, pertahankan status sebelumnya (hysteresis).
         if not self.is_closed:
             status = "Mata terbuka" if both_open else "Mata transisi / satu mata tertutup"
@@ -196,4 +199,5 @@ class EyeMonitor:
         sound = warning and not muted and now - self.last_sound >= self.cooldown_seconds
         if sound:
             self.last_sound = now
-        return Detection("Mata tertutup", duration, warning, event, sound, self.smoothed)
+        return Detection("Mata tertutup", duration, warning, event, sound,
+                         self.smoothed, closed_event)
