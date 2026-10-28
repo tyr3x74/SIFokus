@@ -1,5 +1,4 @@
-# SIFokus — Pemantauan Mata dan Pengingat Jeda
-
+# SIFokus 
 SIFokus adalah prototipe desktop Python untuk mendeteksi mata tertutup dari webcam dan memberi pengingat visual serta bunyi ketika kedua mata tetap tertutup melewati durasi pemicu. Pemrosesan kamera dilakukan lokal. Aplikasi tidak menyimpan atau mengirim rekaman.
 
 ## Tujuan dan ruang lingkup
